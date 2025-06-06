@@ -196,6 +196,7 @@ export interface IWindowSettings {
 	readonly restoreWindows: 'preserve' | 'all' | 'folders' | 'one' | 'none';
 	readonly restoreFullscreen: boolean;
 	readonly zoomLevel: number;
+	readonly zoomStep: number;
 	readonly titleBarStyle: TitlebarStyle;
 	readonly controlsStyle: WindowControlsStyle;
 	readonly menuStyle: MenuStyleConfiguration;
@@ -456,6 +457,7 @@ export interface INativeWindowConfiguration extends IWindowConfiguration, Native
 	autoDetectHighContrast?: boolean;
 	autoDetectColorScheme?: boolean;
 	isCustomZoomLevel?: boolean;
+	isCustomZoomStep?: boolean;
 
 	perfMarks: PerformanceMark[];
 

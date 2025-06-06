@@ -16,8 +16,8 @@ import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js'
 import { WindowMinimumSize, IOpenFileRequest, IAddRemoveFoldersRequest, INativeRunActionInWindowRequest, INativeRunKeybindingInWindowRequest, INativeOpenFileRequest, hasNativeTitlebar } from '../../platform/window/common/window.js';
 import { ITitleService } from '../services/title/browser/titleService.js';
 import { IWorkbenchThemeService } from '../services/themes/common/workbenchThemeService.js';
-import { ApplyZoomTarget, applyZoom } from '../../platform/window/electron-sandbox/window.js';
-import { setFullscreen, getZoomLevel, onDidChangeZoomLevel, getZoomFactor } from '../../base/browser/browser.js';
+import { ApplyZoomTarget, applyZoom, applyZoomStep } from '../../platform/window/electron-sandbox/window.js';
+import { setFullscreen, getZoomLevel, onDidChangeZoomLevel, getZoomFactor, getZoomStep, onDidChangeZoomStep } from '../../base/browser/browser.js';
 import { ICommandService, CommandsRegistry } from '../../platform/commands/common/commands.js';
 import { IResourceEditorInput } from '../../platform/editor/common/editor.js';
 import { ipcRenderer, process } from '../../base/parts/sandbox/electron-sandbox/globals.js';
@@ -131,6 +131,7 @@ export class NativeWindow extends BaseWindow {
 		super(mainWindow, undefined, hostService, nativeEnvironmentService);
 
 		this.configuredWindowZoomLevel = this.resolveConfiguredWindowZoomLevel();
+		this.configuredWindowZoomStep = this.resolveConfiguredWindowZoomStep();
 
 		this.registerListeners();
 		this.create();
@@ -372,6 +373,15 @@ export class NativeWindow extends BaseWindow {
 		}
 
 		this._register(this.editorGroupService.onDidCreateAuxiliaryEditorPart(part => this.createWindowZoomStatusEntry(part)));
+
+		// Window Zoom Step
+		this._register(this.configurationService.onDidChangeConfiguration(e => {
+			if (e.affectsConfiguration('window.zoomStep') || (e.affectsConfiguration('window.zoomPerWindow') && this.configurationService.getValue('window.zoomPerWindow') === false)) {
+				this.onDidChangeConfiguredWindowZoomStep();
+			}
+		}));
+
+		this._register(onDidChangeZoomStep(targetWindowId => this.handleOnDidChangeZoomStep(targetWindowId)));
 
 		// Listen to visible editor changes (debounced in case a new editor opens immediately after)
 		this._register(Event.debounce(this.editorService.onDidVisibleEditorsChange, () => undefined, 0, undefined, undefined, undefined, this._store)(() => this.maybeCloseWindow()));
@@ -1017,6 +1027,14 @@ export class NativeWindow extends BaseWindow {
 		return typeof windowZoomLevel === 'number' ? windowZoomLevel : 0;
 	}
 
+	private configuredWindowZoomStep: number;
+
+	private resolveConfiguredWindowZoomStep(): number {
+		const windowZoomStep = this.configurationService.getValue('window.zoomStep');
+
+		return typeof windowZoomStep === 'number' ? windowZoomStep : 1;
+	}
+
 	private handleOnDidChangeZoomLevel(targetWindowId: number): void {
 
 		// Zoom status entry
@@ -1032,6 +1050,20 @@ export class NativeWindow extends BaseWindow {
 			}
 
 			ipcRenderer.invoke('vscode:notifyZoomLevel', notifyZoomLevel);
+		}
+	}
+
+	private handleOnDidChangeZoomStep(targetWindowId: number): void {
+		// Notify main process about a custom zoom level
+		if (targetWindowId === mainWindow.vscodeWindowId) {
+			const currentWindowZoomStep = getZoomStep(mainWindow);
+
+			let notifyZoomStep: number | undefined = undefined;
+			if (this.configuredWindowZoomLevel !== currentWindowZoomStep) {
+				notifyZoomStep = currentWindowZoomStep;
+			}
+
+			ipcRenderer.invoke('vscode:notifyZoomStep', notifyZoomStep);
 		}
 	}
 
@@ -1076,6 +1108,26 @@ export class NativeWindow extends BaseWindow {
 
 		if (applyZoomLevel) {
 			applyZoom(this.configuredWindowZoomLevel, ApplyZoomTarget.ALL_WINDOWS);
+		}
+
+		for (const [windowId] of this.mapWindowIdToZoomStatusEntry) {
+			this.updateWindowZoomStatusEntry(windowId);
+		}
+	}
+
+	private onDidChangeConfiguredWindowZoomStep(): void {
+		this.configuredWindowZoomStep = this.resolveConfiguredWindowZoomStep();
+
+		let applyZoomSteps = false;
+		for (const { window } of getWindows()) {
+			if (getZoomStep(window) !== this.configuredWindowZoomStep) {
+				applyZoomSteps = true;
+				break;
+			}
+		}
+
+		if (applyZoomSteps) {
+			applyZoomStep(this.configuredWindowZoomStep, ApplyZoomTarget.ALL_WINDOWS);
 		}
 
 		for (const [windowId] of this.mapWindowIdToZoomStatusEntry) {

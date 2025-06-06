@@ -574,6 +574,7 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 	private currentNoProxy: string | undefined = undefined;
 
 	private customZoomLevel: number | undefined = undefined;
+	private customZoomStep: number | undefined = undefined;
 
 	private readonly configObjectUrl: IIPCObjectUrl<INativeWindowConfiguration>;
 	private pendingLoadConfig: INativeWindowConfiguration | undefined;
@@ -1158,6 +1159,8 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 		configuration.partsSplash = this.themeMainService.getWindowSplash(configuration.workspace);
 		configuration.zoomLevel = this.getZoomLevel();
 		configuration.isCustomZoomLevel = typeof this.customZoomLevel === 'number';
+		configuration.zoomStep = this.getZoomStep();
+		configuration.isCustomZoomStep = typeof this.customZoomStep === 'number';
 		if (configuration.isCustomZoomLevel && configuration.partsSplash) {
 			configuration.partsSplash.zoomLevel = configuration.zoomLevel;
 		}
@@ -1426,6 +1429,19 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 
 		const windowSettings = this.configurationService.getValue<IWindowSettings | undefined>('window');
 		return windowSettings?.zoomLevel;
+	}
+
+	notifyZoomStep(zoomStep: number | undefined): void {
+		this.customZoomStep = zoomStep;
+	}
+
+	private getZoomStep(): number | undefined {
+		if (typeof this.customZoomStep === 'number') {
+			return this.customZoomStep;
+		}
+
+		const windowSettings = this.configurationService.getValue<IWindowSettings | undefined>('window');
+		return windowSettings?.zoomStep;
 	}
 
 	close(): void {

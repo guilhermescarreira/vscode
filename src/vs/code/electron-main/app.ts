@@ -520,6 +520,14 @@ export class CodeApplication extends Disposable {
 			}
 		});
 
+		validatedIpcMain.handle('vscode:notifyZoomStep', async (event, zoomStep: number | undefined) => {
+			const window = this.windowsMainService?.getWindowByWebContents(event.sender);
+			if (window) {
+				window.notifyZoomStep(zoomStep);
+			}
+		});
+
+
 		//#endregion
 	}
 
