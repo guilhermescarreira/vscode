@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { getZoomLevel, setZoomFactor, setZoomLevel } from '../../../base/browser/browser.js';
+import { getZoomLevel, setZoomFactor, setZoomLevel, getZoomStep, setZoomStep } from '../../../base/browser/browser.js';
 import { getActiveWindow, getWindows } from '../../../base/browser/dom.js';
 import { mainWindow } from '../../../base/browser/window.js';
 import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';
@@ -17,6 +17,8 @@ export enum ApplyZoomTarget {
 
 export const MAX_ZOOM_LEVEL = 8;
 export const MIN_ZOOM_LEVEL = -8;
+export const MIN_ZOOM_STEP = 0.1;
+export const MAX_ZOOM_STEP = 8;
 
 /**
  * Apply a zoom level to the window. Also sets it in our in-memory
@@ -41,6 +43,23 @@ export function applyZoom(zoomLevel: number, target: ApplyZoomTarget | Window): 
 	}
 }
 
+export function applyZoomStep(zoomStep: number, target: ApplyZoomTarget | Window): void {
+	zoomStep = Math.min(Math.max(zoomStep, MIN_ZOOM_STEP), MAX_ZOOM_STEP);
+
+	const targetWindows: Window[] = [];
+	if (target === ApplyZoomTarget.ACTIVE_WINDOW) {
+		targetWindows.push(getActiveWindow());
+	} else if (target === ApplyZoomTarget.ALL_WINDOWS) {
+		targetWindows.push(...Array.from(getWindows()).map(({ window }) => window));
+	} else {
+		targetWindows.push(target);
+	}
+
+	for (const targetWindow of targetWindows) {
+		setZoomStep(zoomStep, targetWindow);
+	}
+}
+
 function getGlobals(win: Window): ISandboxGlobals | undefined {
 	if (win === mainWindow) {
 		// main window
@@ -57,11 +76,11 @@ function getGlobals(win: Window): ISandboxGlobals | undefined {
 }
 
 export function zoomIn(target: ApplyZoomTarget | Window): void {
-	applyZoom(getZoomLevel(typeof target === 'number' ? getActiveWindow() : target) + 1, target);
+	applyZoom(getZoomLevel(typeof target === 'number' ? getActiveWindow() : target) + getZoomStep(typeof target === 'number' ? getActiveWindow() : target), target);
 }
 
 export function zoomOut(target: ApplyZoomTarget | Window): void {
-	applyZoom(getZoomLevel(typeof target === 'number' ? getActiveWindow() : target) - 1, target);
+	applyZoom(getZoomLevel(typeof target === 'number' ? getActiveWindow() : target) - getZoomStep(typeof target === 'number' ? getActiveWindow() : target), target);
 }
 
 //#region Bootstrap Window

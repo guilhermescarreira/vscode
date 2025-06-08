@@ -8,7 +8,7 @@ import { URI } from '../../../base/common/uri.js';
 import { localize, localize2 } from '../../../nls.js';
 import { ApplyZoomTarget, MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, applyZoom } from '../../../platform/window/electron-sandbox/window.js';
 import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
-import { getZoomLevel } from '../../../base/browser/browser.js';
+import { getZoomLevel, getZoomStep } from '../../../base/browser/browser.js';
 import { FileKind } from '../../../platform/files/common/files.js';
 import { IModelService } from '../../../editor/common/services/model.js';
 import { ILanguageService } from '../../../editor/common/languages/language.js';
@@ -86,7 +86,7 @@ abstract class BaseZoomAction extends Action2 {
 
 		let level: number;
 		if (typeof levelOrReset === 'number') {
-			level = Math.round(levelOrReset); // prevent fractional zoom levels
+			level = Math.round(levelOrReset * 10) / 10; // allows fractional levels (prevents floating point problem)
 		} else {
 
 			// reset to 0 when we apply to all windows
@@ -105,8 +105,10 @@ abstract class BaseZoomAction extends Action2 {
 			}
 		}
 
-		if (level > MAX_ZOOM_LEVEL || level < MIN_ZOOM_LEVEL) {
-			return; // https://github.com/microsoft/vscode/issues/48357
+		if (level > MAX_ZOOM_LEVEL) {
+			level = MAX_ZOOM_LEVEL;
+		} else if (level < MIN_ZOOM_LEVEL) {
+			level = MIN_ZOOM_LEVEL;
 		}
 
 		if (target === ApplyZoomTarget.ALL_WINDOWS) {
@@ -142,7 +144,7 @@ export class ZoomInAction extends BaseZoomAction {
 	}
 
 	override run(accessor: ServicesAccessor): Promise<void> {
-		return super.setZoomLevel(accessor, getZoomLevel(getActiveWindow()) + 1);
+		return super.setZoomLevel(accessor, getZoomLevel(getActiveWindow()) + getZoomStep(getActiveWindow()));
 	}
 }
 
@@ -175,7 +177,7 @@ export class ZoomOutAction extends BaseZoomAction {
 	}
 
 	override run(accessor: ServicesAccessor): Promise<void> {
-		return super.setZoomLevel(accessor, getZoomLevel(getActiveWindow()) - 1);
+		return super.setZoomLevel(accessor, getZoomLevel(getActiveWindow()) - getZoomStep(getActiveWindow()));
 	}
 }
 

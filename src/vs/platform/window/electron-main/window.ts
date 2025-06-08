@@ -84,6 +84,8 @@ export interface ICodeWindow extends IBaseWindow {
 
 	notifyZoomLevel(zoomLevel: number | undefined): void;
 
+	notifyZoomStep(zoomStep: number | undefined): void;
+
 	serializeWindowState(): IWindowState;
 }
 
@@ -135,6 +137,7 @@ export interface IWindowState {
 	y?: number;
 	mode?: WindowMode;
 	zoomLevel?: number;
+	zoomStep?: number;
 	readonly display?: number;
 }
 

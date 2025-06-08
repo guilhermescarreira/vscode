@@ -27,7 +27,7 @@ import { ShutdownReason } from '../services/lifecycle/common/lifecycle.js';
 import { NativeWindow } from './window.js';
 import { ModifierKeyEmitter } from '../../base/browser/dom.js';
 import { applicationConfigurationNodeBase, securityConfigurationNodeBase } from '../common/configuration.js';
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from '../../platform/window/electron-sandbox/window.js';
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, MAX_ZOOM_STEP, MIN_ZOOM_STEP } from '../../platform/window/electron-sandbox/window.js';
 import { DefaultAccountManagementContribution } from '../services/accounts/common/defaultAccount.js';
 import { registerWorkbenchContribution2, WorkbenchPhase } from '../common/contributions.js';
 
@@ -207,6 +207,14 @@ import { registerWorkbenchContribution2, WorkbenchPhase } from '../common/contri
 				'type': 'boolean',
 				'default': true,
 				'markdownDescription': localize({ comment: ['{0} will be a setting name rendered as a link'], key: 'zoomPerWindow' }, "Controls if the 'Zoom In' and 'Zoom Out' commands apply the zoom level to all windows or only the active window. See {0} for configuring a default zoom level for all windows.", '`#window.zoomLevel#`'),
+				tags: ['accessibility']
+			},
+			'window.zoomStep': {
+				'type': 'number',
+				'default': 1,
+				'minimum': MIN_ZOOM_STEP,
+				'maximum': MAX_ZOOM_STEP,
+				'markdownDescription': localize({ comment: ['{0}, {1} will be a setting name rendered as a link'], key: 'zoomStep' }, "Controls the step of the 'Zoom In' and 'Zoom Out' commands, while using {0} or {1}.", '`CTRL + +`', '`CTRL + -`'),
 				tags: ['accessibility']
 			},
 			'window.newWindowDimensions': {
