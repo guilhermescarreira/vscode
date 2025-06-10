@@ -57,7 +57,7 @@ class WindowManager {
 
 		const targetWindowId = this.getWindowId(targetWindow);
 		this.mapWindowIdToZoomStep.set(this.getWindowId(targetWindow), zoomStep);
-		this._onDidChangeZoomLevel.fire(targetWindowId);
+		this._onDidChangeZoomStep.fire(targetWindowId);
 	}
 
 	// --- Fullscreen
