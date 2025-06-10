@@ -15,7 +15,9 @@ class WindowManager {
 	private readonly mapWindowIdToZoomLevel = new Map<number, number>();
 
 	private readonly _onDidChangeZoomLevel = new Emitter<number>();
+	private readonly _onDidChangeZoomStep = new Emitter<number>();
 	readonly onDidChangeZoomLevel = this._onDidChangeZoomLevel.event;
+	readonly onDidChangeZoomStep = this._onDidChangeZoomStep.event;
 
 	getZoomLevel(targetWindow: Window): number {
 		return this.mapWindowIdToZoomLevel.get(this.getWindowId(targetWindow)) ?? 0;
@@ -39,6 +41,23 @@ class WindowManager {
 	}
 	setZoomFactor(zoomFactor: number, targetWindow: Window): void {
 		this.mapWindowIdToZoomFactor.set(this.getWindowId(targetWindow), zoomFactor);
+	}
+
+	// --- Zoom Step
+
+	private readonly mapWindowIdToZoomStep = new Map<number, number>();
+
+	getZoomStep(targetWindow: Window): number {
+		return this.mapWindowIdToZoomStep.get(this.getWindowId(targetWindow)) ?? 1;
+	}
+	setZoomStep(zoomStep: number, targetWindow: Window): void {
+		if (this.getZoomLevel(targetWindow) === zoomStep) {
+			return;
+		}
+
+		const targetWindowId = this.getWindowId(targetWindow);
+		this.mapWindowIdToZoomStep.set(this.getWindowId(targetWindow), zoomStep);
+		this._onDidChangeZoomStep.fire(targetWindowId);
 	}
 
 	// --- Fullscreen
@@ -89,6 +108,15 @@ export function getZoomFactor(targetWindow: Window): number {
 export function setZoomFactor(zoomFactor: number, targetWindow: Window): void {
 	WindowManager.INSTANCE.setZoomFactor(zoomFactor, targetWindow);
 }
+
+export function setZoomStep(zoomStep: number, targetWindow: Window): void {
+	WindowManager.INSTANCE.setZoomStep(zoomStep, targetWindow);
+}
+
+export function getZoomStep(targetWindow: Window): number {
+	return WindowManager.INSTANCE.getZoomStep(targetWindow);
+}
+export const onDidChangeZoomStep = WindowManager.INSTANCE.onDidChangeZoomStep;
 
 export function setFullscreen(fullscreen: boolean, targetWindow: Window): void {
 	WindowManager.INSTANCE.setFullscreen(fullscreen, targetWindow);

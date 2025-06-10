@@ -50,6 +50,11 @@ export interface ISandboxConfiguration {
 	zoomLevel?: number;
 
 	/**
+	 * Configured zoom step.
+	 */
+	zoomStep?: number;
+
+	/**
 	 * Location of V8 code cache.
 	 */
 	codeCachePath?: string;
